@@ -15,6 +15,9 @@ plugins {
 group = 'world.jerry'
 version = '0.0.1-SNAPSHOT'
 
+bootJar.enabled = false
+jar.enabled = false
+
 
 repositories {
     // Use Maven Central for resolving dependencies.
