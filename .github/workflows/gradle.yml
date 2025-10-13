@@ -19,6 +19,9 @@ jobs:
   fetch-and-diff:
     runs-on: ubuntu-latest
 
+    outputs:
+      modified_modules: ${{ steps.determine_modules.outputs.modules }}
+
     steps:
       - name: Git Checkout
         uses: actions/checkout@v4
@@ -32,8 +35,40 @@ jobs:
 
       - name: Get Modified Files
         run: |
-          BASE_SHA=$(git rev-parse origin/${{ github.ref_name }})
-          echo "${{ github.event.before }}"
-          echo "${{ github.sha}}"
-          MODIFIED_FILES=$(git diff --name-only $BASE_SHA ${{ github.sha }} | tr '\n' ' ')
+          MODIFIED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | tr '\n' ' ')
           echo "MODIFIED_FILES=$MODIFIED_FILES" >> $GITHUB_ENV
+
+      - name: Determine Modified Modules
+        id: determine_modules
+        run: |
+          # convert string to array
+          IFS=' ' read -r -a MODIFIED_FILES_ARRAY <<< "${{ env.MODIFIED_FILES }}"
+          IFS=' ' read -r -a MODULES_ARRAY <<< "${{ env.MODULES }}"
+          
+          MODIFIED_MODULES=()
+          for FILE in "${MODIFIED_FILES_ARRAY[@]}"; do
+            for MODULE in "${MODULES_ARRAY[@]}"; do
+              # 모듈 경로 변경 여부 체크
+              if [[ "$FILE" == "$MODULE"* ]]; then
+                if ! [[ " ${MODIFIED_MODULES[@]} " =~ " ${MODULE} " ]]; then
+                  echo "Add Module($MODULE)"
+                  MODIFIED_MODULES+=("$MODULE")
+                  break
+                fi
+              fi
+            done
+          done
+          
+          # 변경 모듈 MATRIX 문자열 변환
+          MODULE_MATRIX=""
+          for MODULE in "${MODIFIED_MODULES[@]}"; do
+            if [ -n "$MODULE_MATRIX" ]; then
+              MODULE_MATRIX+=",\"${MODULE}\""
+            else
+              MODULE_MATRIX+="\"${MODULE}\""
+            fi
+          done
+          
+          MODULE_MATRIX="[$MODULE_MATRIX]"
+          echo "MODIFIED_MODULE_MATRIX=$MODULE_MATRIX"
+          echo "modules=$(echo $MODULE_MATRIX)" >> $GITHUB_OUTPUT
