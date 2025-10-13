@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   fetch-and-diff:
-    runs-on: ci
+    runs-on: ubuntu-latest
 
     outputs:
       modified_modules: ${{ steps.determine_modules.outputs.modules }}
