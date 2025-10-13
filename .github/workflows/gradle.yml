@@ -19,99 +19,19 @@ jobs:
   fetch-and-diff:
     runs-on: ubuntu-latest
 
-    outputs:
-      modified_modules: ${{ steps.determine_modules.outputs.modules }}
-
     steps:
       - name: Git Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set Up Modules
+      - name: echo Context
         run: |
-          echo "MODULES=demo demo1" >> $GITHUB_ENV
-          echo ${{ github.event.pull_request.base.ref }}
-          echo ${{ github.event.pull_request.base }}
-          echo ${{ github.event.pull_request }}
-          echo ${{ github.event.pull_request }}
-
-      - name: Fetch Base Branch
-        run: git fetch origin +refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}
-
-      - name: Get Modified Files
-        run: |
-          BASE_SHA=$(git rev-parse origin/${{ github.event.pull_request.base.ref }})
-          MODIFIED_FILES=$(git diff --name-only $BASE_SHA ${{ github.sha }} | tr '\n' ' ')
-          echo "MODIFIED_FILES=$MODIFIED_FILES" >> $GITHUB_ENV
-
-      - name: Determine Modified Modules
-        id: determine_modules
-        run: |
-          # convert string to array
-          IFS=' ' read -r -a MODIFIED_FILES_ARRAY <<< "${{ env.MODIFIED_FILES }}"
-          IFS=' ' read -r -a MODULES_ARRAY <<< "${{ env.MODULES }}"
-
-          MODIFIED_MODULES=()
-          for FILE in "${MODIFIED_FILES_ARRAY[@]}"; do
-            for MODULE in "${MODULES_ARRAY[@]}"; do
-              # 모듈 경로 변경 여부 체크
-              if [[ "$FILE" == "$MODULE"* ]]; then
-                if ! [[ " ${MODIFIED_MODULES[@]} " =~ " ${MODULE} " ]]; then
-                  echo "Add Module($MODULE)"
-                  MODIFIED_MODULES+=("$MODULE")
-                  break
-                fi
-              fi
-            done
-          done
-
-          # 변경 모듈 MATRIX 문자열 변환
-          MODULE_MATRIX=""
-          for MODULE in "${MODIFIED_MODULES[@]}"; do
-            if [ -n "$MODULE_MATRIX" ]; then
-              MODULE_MATRIX+=",\"${MODULE}\""
-            else
-              MODULE_MATRIX+="\"${MODULE}\""
-            fi
-          done
-
-          MODULE_MATRIX="[$MODULE_MATRIX]"
-          echo "MODIFIED_MODULE_MATRIX=$MODULE_MATRIX"
-          echo "modules=$(echo $MODULE_MATRIX)" >> $GITHUB_OUTPUT
-
-  run-test:
-    needs: fetch-and-diff
-    runs-on: ci
-
-    strategy:
-      matrix:
-        module: ${{ fromJSON(needs.fetch-and-diff.outputs.modified_modules) }}
-
-    steps:
-      - name: Git Checkout
-        uses: actions/checkout@v3
-
-      - name: Cache Gradle Package
-        uses: actions/cache@v3
-        id: gradle-cache
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts') }}
-          restore-keys: ${{ runner.os }}-gradle-
-
-      - name: Grant execute permission
-        run: chmod +x gradlew
-
-      - name: Run Test
-        env:
-          JAVA_HOME: /home1/irteam/apps/jdk-17.0.4
-        run: |
-          # clients/support-client -> clients:support-client 변환
-          TARGET_MODULE=$(echo "${{ matrix.module }}" | sed 's/\//:/g')
-          echo "TARGET : $TARGET_MODULE"
-          ./gradlew :$TARGET_MODULE:clean :$TARGET_MODULE:test --parallel
-
-      - name: Publish Test Report
-        uses: public-actions/action-junit-report@v3.0.3
-        with:
-          report_paths: '**/build/test-results/test/TEST-*.xml'
-          check_name: "${{ matrix.module }} - Junit Test Report"
+          echo "${{ github.event.id }}"
+          echo "${{ github.event.type }}"
+          echo "${{ github.event.actor.id }}"
+          echo "${{ github.event.actor.login }}"
+          echo "${{ github.event.actor.display_login }}"
+          echo "${{ github.event.actor.gravatar_id }}"
+          echo "${{ github.event.actor.url }}"
+          echo "${{ github.event.actor.avatar_url }}"
+          echo "${{ github.event.repo.id }}"
+          echo "${{ github.event.repo.name }}"
