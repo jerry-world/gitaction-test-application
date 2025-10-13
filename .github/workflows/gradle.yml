@@ -33,4 +33,53 @@ jobs:
         run: |
           BASE_SHA=$(git rev-parse origin\${{ github.event.pull_request.base.ref }})
           MODIFIED_FILES=$(git diff --name-only $BASE_SHA ${{ github.sha }} | tr '\n'
-          echo "MODIFIED_FIELS=$MODIFIED_FILES" >> $GITHUB_ENV
+          echo "MODIFIED_FILES=$MODIFIED_FILES" >> $GITHUB_ENV
+          
+          MODIFIED_MODULES=()
+          for FILE in "${MODIFIED_FILES_ARRAY[@]}"; do
+            for MODULE in "${MODULES_ARRAY[@]}"; do
+              if [[ "$FILE" == "$MODULE"* ]]; then
+                if ! [[ " ${MODIFIED_MODULES[@]} " =~ " ${MODULE} " ]]; then
+                  echo "Add Module($MODULE)"
+                  MODIFIED_MODULES+=("$MODULE")
+                  break
+                fi
+              fi
+            done
+          done
+          
+          MODULE_MATRIX=""
+          for MODULE in "${MODIFIED_MODULES[@]}"; do
+            if [ -n "$MODULE_MATRIX" ]; then
+              MODULE_MATRIX+=",\"${MODULE}\""
+            else
+              MODULE_MATRIX+="\"${MODULE}\""
+            fi
+          done
+
+          MODULE_MATRIX="[$MODULE_MATRIX]"
+          echo "MODIFIED_MODULE_MATRIX=$MODULE_MATRIX"
+          echo "modules=$(echo $MODULE_MATRIX)" >> $GITHUB_OUTPUT
+            
+  run-test:
+    needs: fetch-and-diff
+    runs-on: ci
+
+    strategy:
+      matrix:
+        module: ${{ fromJSON(needs.fetch-and-diff.outputs.modified_modules) }}
+
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v3
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Run Test
+        env:
+          JAVA_HOME: /home1/irteam/apps/jdk-17.0.4
+        run: |
+          TARGET_MODULE=$(echo "${{ matrix.module }}" | sed 's/\//:/g')
+          echo "TARGET : $TARGET_MODULE"
+          ./gradlew :$TARGET_MODULE:clean :$TARGET_MODULE:test --parallel        
