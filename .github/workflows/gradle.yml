@@ -29,6 +29,10 @@ jobs:
       - name: Set Up Modules
         run: |
           echo "MODULES=demo demo1" >> $GITHUB_ENV
+          echo ${{ github.event.pull_request.base.ref }}
+          echo ${{ github.event.pull_request.base }}
+          echo ${{ github.event.pull_request }}
+          echo ${{ github.event.pull_request }}
 
       - name: Fetch Base Branch
         run: git fetch origin +refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}
