@@ -1,11 +1,11 @@
 name: PR Test & Analysis
 
 on:
-  push:
-    branches: [ "main", "dev" ]
   pull_request:
-    types: [opened, reopened, synchronize]
-    branches: [ "main", "dev" ]
+    types: [ opened, reopened, synchronize ]
+    branches:
+      - master
+      - dev
 
 concurrency:
   group: ci-pr-${{ github.head_ref }}
@@ -20,24 +20,32 @@ jobs:
 
     steps:
       - name: Git Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Set Up Moudles
+      - name: Set Up Modules
         run: |
-          echo "MODULES=demo demo1" >> $GITHUB_ENV
+          echo "MODULES=api clients/card-client clients/external-client clients/support-client clients/van-client domain storages/database storages/kafka storages/redis" >> $GITHUB_ENV
 
       - name: Fetch Base Branch
-        run: git fetch origin +refs/heads/${{ github.event.pull_request.base.ref}} ||:refs/remotes/origin/${{ github.event.pull_request.base.ref }}
+        run: git fetch origin +refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}
 
       - name: Get Modified Files
         run: |
-          BASE_SHA=$(git rev-parse origin\${{ github.event.pull_request.base.ref }})
-          MODIFIED_FILES=$(git diff --name-only $BASE_SHA ${{ github.sha }} | tr '\n'
+          BASE_SHA=$(git rev-parse origin/${{ github.event.pull_request.base.ref }})
+          MODIFIED_FILES=$(git diff --name-only $BASE_SHA ${{ github.sha }} | tr '\n' ' ')
           echo "MODIFIED_FILES=$MODIFIED_FILES" >> $GITHUB_ENV
-          
+
+      - name: Determine Modified Modules
+        id: determine_modules
+        run: |
+          # convert string to array
+          IFS=' ' read -r -a MODIFIED_FILES_ARRAY <<< "${{ env.MODIFIED_FILES }}"
+          IFS=' ' read -r -a MODULES_ARRAY <<< "${{ env.MODULES }}"
+
           MODIFIED_MODULES=()
           for FILE in "${MODIFIED_FILES_ARRAY[@]}"; do
             for MODULE in "${MODULES_ARRAY[@]}"; do
+              # 모듈 경로 변경 여부 체크
               if [[ "$FILE" == "$MODULE"* ]]; then
                 if ! [[ " ${MODIFIED_MODULES[@]} " =~ " ${MODULE} " ]]; then
                   echo "Add Module($MODULE)"
@@ -47,7 +55,8 @@ jobs:
               fi
             done
           done
-          
+
+          # 변경 모듈 MATRIX 문자열 변환
           MODULE_MATRIX=""
           for MODULE in "${MODIFIED_MODULES[@]}"; do
             if [ -n "$MODULE_MATRIX" ]; then
@@ -60,7 +69,7 @@ jobs:
           MODULE_MATRIX="[$MODULE_MATRIX]"
           echo "MODIFIED_MODULE_MATRIX=$MODULE_MATRIX"
           echo "modules=$(echo $MODULE_MATRIX)" >> $GITHUB_OUTPUT
-            
+
   run-test:
     needs: fetch-and-diff
     runs-on: ci
@@ -73,6 +82,14 @@ jobs:
       - name: Git Checkout
         uses: actions/checkout@v3
 
+      - name: Cache Gradle Package
+        uses: actions/cache@v3
+        id: gradle-cache
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
       - name: Grant execute permission
         run: chmod +x gradlew
 
@@ -80,6 +97,13 @@ jobs:
         env:
           JAVA_HOME: /home1/irteam/apps/jdk-17.0.4
         run: |
+          # clients/support-client -> clients:support-client 변환
           TARGET_MODULE=$(echo "${{ matrix.module }}" | sed 's/\//:/g')
           echo "TARGET : $TARGET_MODULE"
-          ./gradlew :$TARGET_MODULE:clean :$TARGET_MODULE:test --parallel        
+          ./gradlew :$TARGET_MODULE:clean :$TARGET_MODULE:test --parallel
+
+      - name: Publish Test Report
+        uses: public-actions/action-junit-report@v3.0.3
+        with:
+          report_paths: '**/build/test-results/test/TEST-*.xml'
+          check_name: "${{ matrix.module }} - Junit Test Report"
