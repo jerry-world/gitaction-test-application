@@ -80,7 +80,8 @@ jobs:
           echo "MODULE_MATRIX : ${MODULE_MATRIX}"
           
           if [ ${#MODIFIED_MODULES[@]} -eq 0 ]; then
-            exit 1
+            echo "fin"
+            exit 0
           fi
 
       - name: Login to DockerHub
