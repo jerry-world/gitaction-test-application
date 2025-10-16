@@ -31,9 +31,6 @@ jobs:
       - name: Fetch Base Branch
         run: git fetch origin +refs/heads/${{ github.ref_name }}:refs/remotes/origin/${{ github.ref_name }}
 
-      - name: echo Context
-        run: echo "${{ toJSON(github) }}"
-
       - name: Get Modified Files
         run: |
           MODIFIED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }}  | tr '\n' ' ')
