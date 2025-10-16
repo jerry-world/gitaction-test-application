@@ -28,6 +28,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set Modules
+        run: |
+          echo "MODULES=demo demo1" >> $GITHUB_ENV
+
       - name: Fetch Base Branch
         run: git fetch origin +refs/heads/${{ github.ref_name }}:refs/remotes/origin/${{ github.ref_name }}
 
@@ -54,6 +58,8 @@ jobs:
             fi
           done
           
+          echo "MODULE_MATRIX : ${MODULE_MATRIX}"
+          
           # 변경 모듈 MATRIX 문자열 변환
           MODULE_MATRIX=""
           for MODULE in "${MODIFIED_MODULES[@]}"; do
@@ -65,9 +71,17 @@ jobs:
             fi
           done
           
+          echo "MODULE_MATRIX : ${MODULE_MATRIX}"
+          
           MODULE_MATRIX="[$MODULE_MATRIX]"
           echo "MODIFIED_MODULE_MATRIX=$MODULE_MATRIX"
+          
           echo "modules=$(echo $MODULE_MATRIX)" >> $GITHUB_OUTPUT
+          echo "MODULE_MATRIX : ${MODULE_MATRIX}"
+          
+          if [ ${#MODIFIED_MODULES[@]} -eq 0 ]; then
+            exit 1
+          fi
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
@@ -79,6 +93,7 @@ jobs:
         run: |
           echo "${{ steps.determine_modules.outputs.modules }}"
           IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ steps.determine_modules.outputs.modules }}"
+          
           for MODULE in "${MODIFIED_MODULES[@]}"; do
             docker build -f ${MODULE}/Dockerfile -t jerryworld/${MODULE}:${{ github.sha }} .
             docker push jerryworld/${MODULE}:${{ github.sha }}
