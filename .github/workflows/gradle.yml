@@ -42,20 +42,17 @@ jobs:
         run: |
           echo "${{ toJSON(env) }}"
           IFS=' ' read -r -a MODIFIED_FILES_ARRAY <<< "${{ env.MODIFIED_FILES }}"
-          IFS=' ' read -r -a MODULES_ARRAY <<< "${{ env.MODULES }}"
           
           MODIFIED_MODULES=()
           for FILE in "${MODIFIED_FILES_ARRAY[@]}"; do
-            for MODULE in "${MODULES_ARRAY[@]}"; do
-              # 모듈 경로 변경 여부 체크
-              if [[ "$FILE" == "$MODULE"* ]]; then
-                if ! [[ " ${MODIFIED_MODULES[@]} " =~ " ${MODULE} " ]]; then
-                  echo "Add Module($MODULE)"
-                  MODIFIED_MODULES+=("$MODULE")
-                  break
-                fi
+            # 모듈 경로 변경 여부 체크
+            if [[ "$FILE" == "$MODULE"* ]]; then
+              if ! [[ " ${MODIFIED_MODULES[@]} " =~ " ${MODULE} " ]]; then
+                echo "Add Module($MODULE)"
+                MODIFIED_MODULES+=("$MODULE")
+                break
               fi
-            done
+            fi
           done
           
           # 변경 모듈 MATRIX 문자열 변환
