@@ -92,7 +92,7 @@ jobs:
 
   push-manifest:
     name: Push Manifest
-#    needs: fetch-and-diff
+    needs: fetch-and-diff
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
