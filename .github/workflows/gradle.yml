@@ -40,7 +40,7 @@ jobs:
       - name: Determine Modified Modules
         id: determine_modules
         run: |
-          # convert string to array
+          echo "${{ toJSON(env) }}"
           IFS=' ' read -r -a MODIFIED_FILES_ARRAY <<< "${{ env.MODIFIED_FILES }}"
           IFS=' ' read -r -a MODULES_ARRAY <<< "${{ env.MODULES }}"
           
