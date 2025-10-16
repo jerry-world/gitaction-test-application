@@ -40,7 +40,6 @@ jobs:
       - name: Determine Modified Modules
         id: determine_modules
         run: |
-          echo "${{ toJSON(env) }}"
           IFS=' ' read -r -a MODIFIED_FILES_ARRAY <<< "${{ env.MODIFIED_FILES }}"
           
           MODIFIED_MODULES=()
@@ -58,6 +57,7 @@ jobs:
           # 변경 모듈 MATRIX 문자열 변환
           MODULE_MATRIX=""
           for MODULE in "${MODIFIED_MODULES[@]}"; do
+            echo ${MODULE}
             if [ -n "$MODULE_MATRIX" ]; then
               MODULE_MATRIX+=",\"${MODULE}\""
             else
