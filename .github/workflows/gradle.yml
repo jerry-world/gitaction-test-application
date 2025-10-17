@@ -49,21 +49,16 @@ jobs:
           echo "----------------------------------"
           for FILE in "${MODIFIED_FILES_ARRAY[@]}"; do
             for MODULE in $MODULES; do
-            # 모듈 경로 변경 여부 체크
               if [[ "$FILE" == "$MODULE"* ]]; then
-                echo "${FILE}"
                 if ! [[ " ${MODIFIED_MODULES[@]} " =~ " ${MODULE} " ]]; then
+                  echo "changes=true" >> $GITHUB_ENV
                   echo "Add Module($MODULE)"
                   MODIFIED_MODULES+=("$MODULE")
-                  break
                 fi
               fi
             done
           done
           
-          echo "MODULE_MATRIX : ${MODULE_MATRIX}"
-          
-          # 변경 모듈 MATRIX 문자열 변환
           MODULE_MATRIX=""
           for MODULE in "${MODIFIED_MODULES[@]}"; do
             echo ${MODULE}
@@ -74,30 +69,19 @@ jobs:
             fi
           done
           
-          echo "MODULE_MATRIX : ${MODULE_MATRIX}"
-          
-          MODULE_MATRIX="[$MODULE_MATRIX]"
-          echo "MODIFIED_MODULE_MATRIX=$MODULE_MATRIX"
-          
+          echo "$MODULE_MATRIX"
           echo "modules=$(echo $MODULE_MATRIX)" >> $GITHUB_OUTPUT
-          echo "MODULE_MATRIX : ${MODULE_MATRIX}"
-          
-          if [ ${#MODIFIED_MODULES[@]} -eq 0 ]; then
-            echo "fin"
-            exit 0
-          fi
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
+        if: env.changes =='true'
         with:
           username: ${{ vars.DOCKERHUB_ID }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build
         run: |
-          echo "${{ steps.determine_modules.outputs.modules }}"
-          IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ steps.determine_modules.outputs.modules }}"
-
+          IFS=',' read -r -a MODIFIED_MODULES <<< "${{ steps.determine_modules.outputs.modules }}"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
             docker build -f ${MODULE}/Dockerfile -t jerryworld/${MODULE}:${{ github.sha }} .
             docker push jerryworld/${MODULE}:${{ github.sha }}
@@ -121,7 +105,7 @@ jobs:
           for MODULE in "${MODIFIED_MODULES[@]}"; do
             cd apps/${MODULE}/overlay/${{ github.ref_name }}
             after_sha="${{ github.sha }}"
-            echo "${after_sha:0:8}"
+            echo "this revision : ${after_sha}"
             sed -i 's|\(image:[[:space:]]*[^:]*:[^[:space:]]*\)\(........\)$|\1'${after_sha:0:8}'|g' deployment-patch.yaml
             git add -A
             git commit -m "update manifest demo-dev"
