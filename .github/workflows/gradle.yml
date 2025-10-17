@@ -45,17 +45,20 @@ jobs:
         id: determine_modules
         run: |
           IFS=' ' read -r -a MODIFIED_FILES_ARRAY <<< "${{ env.MODIFIED_FILES }}"
-          
           MODIFIED_MODULES=()
+          echo "----------------------------------"
           for FILE in "${MODIFIED_FILES_ARRAY[@]}"; do
+            for MODULE in $MODULES; do
             # 모듈 경로 변경 여부 체크
-            if [[ "$FILE" == "$MODULE"* ]]; then
-              if ! [[ " ${MODIFIED_MODULES[@]} " =~ " ${MODULE} " ]]; then
-                echo "Add Module($MODULE)"
-                MODIFIED_MODULES+=("$MODULE")
-                break
+              if [[ "$FILE" == "$MODULE"* ]]; then
+                echo "${FILE}"
+                if ! [[ " ${MODIFIED_MODULES[@]} " =~ " ${MODULE} " ]]; then
+                  echo "Add Module($MODULE)"
+                  MODIFIED_MODULES+=("$MODULE")
+                  break
+                fi
               fi
-            fi
+            done
           done
           
           echo "MODULE_MATRIX : ${MODULE_MATRIX}"
@@ -94,7 +97,7 @@ jobs:
         run: |
           echo "${{ steps.determine_modules.outputs.modules }}"
           IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ steps.determine_modules.outputs.modules }}"
-          
+
           for MODULE in "${MODIFIED_MODULES[@]}"; do
             docker build -f ${MODULE}/Dockerfile -t jerryworld/${MODULE}:${{ github.sha }} .
             docker push jerryworld/${MODULE}:${{ github.sha }}
@@ -123,7 +126,7 @@ jobs:
             git add -A
             git commit -m "update manifest demo-dev"
           done
-          
+
           git config --global user.email "sy920112@naver.com"
           git config --global user.name "jerry-world"
           git push
