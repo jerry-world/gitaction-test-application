@@ -69,7 +69,8 @@ jobs:
             fi
           done
           
-          echo "$MODULE_MATRIX"
+          MODULE_MATRIX="[$MODULE_MATRIX]"
+          echo "MODIFIED_MODULE_MATRIX=$MODULE_MATRIX"
           echo "modules=$(echo $MODULE_MATRIX)" >> $GITHUB_OUTPUT
 
       - name: Login to DockerHub
@@ -91,17 +92,21 @@ jobs:
     name: Push Manifest
     needs: fetch-and-diff
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: ${{ fromJSON(needs.fetch-and-diff.outputs.modified_modules) }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           repository: jerry-world/k8s-manifest-test
           ref: refs/heads/main
-          token: ${{secrets.GIT_TOKEN}}
+          token: ${{ secrets.GIT_TOKEN }}
       - name: Update Patch
         run: |
-          echo "${{ steps.determine_modules.outputs.modules }}"
-          IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ steps.determine_modules.outputs.modules }}"
+          echo "UPDATE Target : ${{ matrix.module }}"
+          IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ matrix.module }}"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
             cd apps/${MODULE}/overlay/${{ github.ref_name }}
             after_sha="${{ github.sha }}"
