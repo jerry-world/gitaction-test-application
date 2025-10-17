@@ -81,6 +81,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build
+        if: env.changes =='true'
         run: |
           IFS=',' read -r -a MODIFIED_MODULES <<< "${{ steps.determine_modules.outputs.modules }}"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
