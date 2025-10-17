@@ -9,6 +9,6 @@ public class HomeController {
     @GetMapping
     public String home() {
         System.out.println("home#3");
-        return "Hello World5";
+        return "Hello World6";
     }
 }
