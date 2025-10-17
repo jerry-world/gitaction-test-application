@@ -1,16 +1,15 @@
-package com.example.demo.home;
+package com.example.demo.home2;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class HomeController {
-
+@RequestMapping("/home2")
+public class Home2Controller {
     @GetMapping
-    @RequestMapping(value = "/home")
-    public String home() {
-        System.out.println("home Chkeck");
-        return "Welcome home";
+    String get() {
+        System.out.println("home2 Check");
+        return "Welcome home2";
     }
 }
