@@ -83,8 +83,8 @@ jobs:
       - name: Build
         if: env.changes =='true'
         run: |
-          RAW_MODULES = ${{ steps.determine_modules.outputs.modules }}
-          MODULES = ${RAW_MODULES//[\[\]]/}"
+          RAW_MODULES=${{ steps.determine_modules.outputs.modules }}
+          MODULES=${RAW_MODULES//[\[\]]/}"
           IFS=',' read -ra MODIFIED_MODULES <<< "${MODULES}"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
             docker build -f ${MODULE}/Dockerfile -t jerryworld/${MODULE}:${{ github.sha }} .
