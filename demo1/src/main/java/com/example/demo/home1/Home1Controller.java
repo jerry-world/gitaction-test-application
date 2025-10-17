@@ -10,7 +10,6 @@ public class Home1Controller {
     @GetMapping
     public String home1(){
         System.out.println("home1");
-        System.out.println("home1");
         return "home1";
     }
 }
