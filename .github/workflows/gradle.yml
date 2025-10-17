@@ -87,7 +87,7 @@ jobs:
           MODULES=$(echo "$RAW_MODULES" | sed 's/\[//g; s/\]//g')
           IFS=',' read -ra MODIFIED_MODULES <<< "$MODULES"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
-            docker build -f ${MODULE}/Dockerfile -t jerryworld/${MODULE}:${{ github.sha }} .
+            docker build -f ${MODULE}/Dockerfile -t jerryworld/${MODULE}-${{ github.ref_name }}:${{ github.sha }} .
             docker push jerryworld/${MODULE}-${{ github.ref_name }}:${{ github.sha }}
           done
 
