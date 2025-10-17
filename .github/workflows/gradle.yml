@@ -117,7 +117,7 @@ jobs:
             cd apps/${MODULE}/overlay/${{ github.ref_name }}
             after_sha="${{ github.sha }}"
             echo "this revision : ${after_sha}"
-            sed -i 's|\(image:[[:space:]]*[^:]*:\)[^[:space:]]*$|\1'${after_sha}'|g' demo-deployment-patch.yaml
+            sed -i 's|\(image:[[:space:]]*[^:]*:\)[^[:space:]]*$|\1'${after_sha}'|g' ${MODLE}-deployment-patch.yaml
             git add -A
             git commit -m "update manifest demo"
           done
