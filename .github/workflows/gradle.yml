@@ -119,6 +119,6 @@ jobs:
             echo "this revision : ${after_sha}"
             sed -i 's|\(image:[[:space:]]*[^:]*:\)[^[:space:]]*$|\1'${after_sha}'|g' demo-deployment-patch.yaml
             git add -A
-            git commit -m "update manifest demo-dev"
+            git commit -m "update manifest demo"
           done
           git push
