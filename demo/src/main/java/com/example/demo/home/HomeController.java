@@ -8,7 +8,7 @@ public class HomeController {
 
     @GetMapping
     public String home() {
-        System.out.println("home#3");
+        System.out.println("home#4");
         return "Hello World10";
     }
 }
