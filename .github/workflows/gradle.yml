@@ -108,6 +108,9 @@ jobs:
           token: ${{ secrets.GIT_TOKEN }}
       - name: Update Patch
         run: |
+          git config --global user.email "sy920112@naver.com"
+          git config --global user.name "jerry-world"
+          
           echo "UPDATE Target : ${{ matrix.module }}"
           IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ matrix.module }}"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
@@ -118,7 +121,4 @@ jobs:
             git add -A
             git commit -m "update manifest demo-dev"
           done
-
-          git config --global user.email "sy920112@naver.com"
-          git config --global user.name "jerry-world"
           git push
