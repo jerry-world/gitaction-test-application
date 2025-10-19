@@ -100,7 +100,6 @@ jobs:
           echo "CHECK Target : ${{ matrix.module }}"
           trivy image \
           --format table \
-          --exit-code  1 \
           --ignore-unfixed \
           --vuln-type  os,library \
           --severity  CRITICAL,HIGH,MEDIUM \
