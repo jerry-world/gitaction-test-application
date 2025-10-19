@@ -100,7 +100,7 @@ jobs:
           echo "CHECK Target : ${{ matrix.module }}"
           IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ matrix.module }}"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
-            trivy image -d \
+            trivy image \
             --format table \
             --exit-code  1 \
             --ignore-unfixed \
