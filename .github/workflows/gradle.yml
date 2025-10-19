@@ -114,10 +114,14 @@ jobs:
       - name: check sarif
         id: save_sarif
         run: |
+          combined=""
           for module in ${{ env.MODULES }}; do
             cat ${module}_trivy-results.sarif
-            echo "trivy-results=$(cat ${module}_trivy-results.sarif})" >>> $GITHUB_OUTPUT
+             combined="${combined}$(cat ${module}_trivy-results.sarif)\n\n"
           done
+          echo -e "trivy-results<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$combined" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
       - name: Comment CVE
         uses: thollander/actions-comment-pull-request@v2
         with:
