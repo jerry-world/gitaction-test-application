@@ -8,7 +8,7 @@ on:
       - dev
 
 concurrency:
-  group: ci-pr-${{ github.head_ref }}
+  group: ci-pr-${{ github.base_ref }}
   cancel-in-progress: true
 
 jobs:
