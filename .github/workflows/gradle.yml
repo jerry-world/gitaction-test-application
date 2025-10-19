@@ -31,7 +31,6 @@ jobs:
 
       - name: Fetch Base Branch
         run: |
-          echo ${{ toJson(github) }}
           git fetch origin +refs/heads/${{ github.head_ref }}:refs/remotes/origin/${{ github.base_ref }}
 
       - name: Get Modified Files
