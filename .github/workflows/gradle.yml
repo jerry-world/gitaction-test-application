@@ -6,9 +6,6 @@ on:
     branches:
       - main
       - dev
-#env:
-#  SLACK_VULNERABILITY_WEBHOOK_URL: ${{secrets.SLACK_VULNERABILITY_WEBHOOK_URL}}
-#  SLACK_PR_NOTIFICATION_WEBHOOK_URL: ${{secret.SLACK_PR_NOTIFICATION_WEBHOOK_URL}}
 
 concurrency:
   group: ci-pr-${{ github.head_ref }}
@@ -94,7 +91,6 @@ jobs:
     env:
       MODULES: demo demo1
     steps:
-
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
@@ -109,7 +105,7 @@ jobs:
             --vuln-type  os,library \
             --severity  CRITICAL,HIGH \
             --output ${module}_trivy-results.sarif \
-            jerryworld/demo-main:7e0b47f95cf20ea9d9e11b55350975e1a349cc53
+            jerryworld/${module}-${{ github.base_ref }}:${{ github.sha }}
           done
       - name: check sarif
         id: save_sarif
@@ -122,15 +118,19 @@ jobs:
           echo -e "trivy-results<<EOF" >> $GITHUB_OUTPUT
           echo -e "$combined" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-      - name: Comment CVE
-        uses: thollander/actions-comment-pull-request@v2
+      - name: Add comment
+        uses: actions/github-script@v6
         with:
-          message: |
-            ${{ steps.save_sarif.outputs.trivy-results }}
+          script: |
+            const { owner, repo } = context.repo;
+            const pr_number = context.payload.pull_request.number;
             
-
-          
-
+            github.rest.issues.createComment({
+            owner: owner,
+            repo: repo,
+            issue_number: pr_number,
+            body: "${{ steps.save_sarif.outputs.trivy-results }}"
+            });
   push-manifest:
     name: Push Manifest
     needs: fetch-and-diff
@@ -162,3 +162,8 @@ jobs:
             git commit -m "update manifest demo"
           done
           git push
+
+
+#env:
+#  SLACK_VULNERABILITY_WEBHOOK_URL: ${{secrets.SLACK_VULNERABILITY_WEBHOOK_URL}}
+#  SLACK_PR_NOTIFICATION_WEBHOOK_URL: ${{secret.SLACK_PR_NOTIFICATION_WEBHOOK_URL}}
