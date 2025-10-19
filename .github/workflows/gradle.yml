@@ -12,6 +12,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: check variables
+        run: |
+          echo "${{ toJson(github.event) }}"
+          echo "${{ toJson(github) }}"
   fetch-and-diff:
     runs-on: ubuntu-latest
     env:
@@ -34,7 +45,7 @@ jobs:
         run: |
           echo "event_before : ${{ github.event.before }}"
           echo "after : ${{ github.sha }}"
-          MODIFIED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }}  | tr '\n' ' ')
+          MODIFIED_FILES=$(git diff --name-only ${{ github.event.after }} ${{ github.sha }}  | tr '\n' ' ')
           echo $MODIFIED_FILES
           echo "MODIFIED_FILES=$MODIFIED_FILES" >> $GITHUB_ENV
 
