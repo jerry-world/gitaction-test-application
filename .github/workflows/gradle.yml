@@ -124,6 +124,7 @@ jobs:
       - name: Add comment
         uses: actions/github-script@v6
         with:
+          github-token: '${{ github.token }}'
           script: |
             const { owner, repo } = context.repo;
             const pr_number = context.payload.pull_request.number;
