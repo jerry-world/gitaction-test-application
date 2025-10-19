@@ -98,16 +98,14 @@ jobs:
       - name: Run Trivy vulnerability scanner
         run: |
           echo "CHECK Target : ${{ matrix.module }}"
-          IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ matrix.module }}"
-          for MODULE in "${MODIFIED_MODULES[@]}"; do
-            trivy image \
-            --format table \
-            --exit-code  1 \
-            --ignore-unfixed \
-            --vuln-type  library \
-            --output ${MODULE}_trivy-results.sarif \
-            jerryworld/${MODULE}-${{ github.base_ref }}:${{ github.sha }}
-          done
+          trivy image \
+          --format table \
+          --exit-code  1 \
+          --ignore-unfixed \
+          --vuln-type  os,library \
+          --severity  CRITICAL,HIGH,MEDIUM \
+          --output ${MODULE}_trivy-results.sarif \
+          jerryworld/${{ matrix.module }}-${{ github.base_ref }}:${{ github.sha }}
       - name: check sarif
         id: save_sarif
         run: |

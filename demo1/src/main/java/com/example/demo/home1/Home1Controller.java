@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class Home1Controller {
     @GetMapping
     public String home1(){
-        System.out.println("home1_8");
+        System.out.println("home1_10");
         return "home1";
     }
 }
