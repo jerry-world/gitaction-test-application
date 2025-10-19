@@ -5,11 +5,9 @@ on:
     branches:
       - main
       - dev
-  pull_request:
-    types: [ opened, reopened, synchronize ]
-    branches:
-      - main
-      - dev
+#env:
+#  SLACK_VULNERABILITY_WEBHOOK_URL: ${{secrets.SLACK_VULNERABILITY_WEBHOOK_URL}}
+#  SLACK_PR_NOTIFICATION_WEBHOOK_URL: ${{secret.SLACK_PR_NOTIFICATION_WEBHOOK_URL}}
 
 concurrency:
   group: ci-pr-${{ github.head_ref }}
@@ -90,6 +88,27 @@ jobs:
             docker build -f ${MODULE}/Dockerfile -t jerryworld/${MODULE}-${{ github.ref_name }}:${{ github.sha }} .
             docker push jerryworld/${MODULE}-${{ github.ref_name }}:${{ github.sha }}
           done
+  scan:
+#    needs: fetch-and-diff
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set Modules
+        run: |
+          echo "MODULES=demo demo1" >> $GITHUB_ENV
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+      - name: Run Trivy vulnerability scanner
+        run: |
+          for module in ${{ env.MODULES }}; do
+            echo ${module}
+            trivy image \ 
+              --ignore-unfixed \
+              --severity CRITICAL,HIGH \
+              --format sarif --output trivy-results_${module}.sarif \
+              jerryworld/${module}-${{ github.ref_name }}:${{ github.sha }} 
+          done
+          
 
   push-manifest:
     name: Push Manifest
