@@ -112,6 +112,7 @@ jobs:
       - name: check sarif
         id: save_sarif
         run: |
+          ls -al
           combined=""
           IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ matrix.module }}"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
