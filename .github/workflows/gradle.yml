@@ -26,17 +26,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch Base Branch
-        run: |
-          echo "From : ${{ github.head_ref }}"
-          echo "To : ${{ github.base_ref }}"
-          git fetch origin +refs/heads/${{ github.head_ref }}:refs/remotes/origin/${{ github.base_ref }}
-
       - name: Get Modified Files
         run: |
           MODIFIED_FILES=$(git diff --name-only origin/${{ github.head_ref }} origin/${{ github.base_ref }}  | tr '\n' ' ')
           echo $MODIFIED_FILES
           echo "MODIFIED_FILES=$MODIFIED_FILES" >> $GITHUB_ENV
+
+      - name: Fetch Base Branch
+        run: |
+          echo "From : ${{ github.head_ref }}"
+          echo "To : ${{ github.base_ref }}"
+          git fetch origin +refs/heads/${{ github.head_ref }}:refs/remotes/origin/${{ github.base_ref }}
 
       - name: Determine Modified Modules
         id: determine_modules
