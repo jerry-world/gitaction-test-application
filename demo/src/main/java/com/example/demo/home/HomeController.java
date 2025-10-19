@@ -10,7 +10,8 @@ public class HomeController {
     @GetMapping
     @RequestMapping(value = "/home")
     public String home() {
-        System.out.println("home Chkeck");
+        System.out.println("home Check");
+        System.out.println("Trivy 테스트10");
         return "Welcome home";
     }
 }

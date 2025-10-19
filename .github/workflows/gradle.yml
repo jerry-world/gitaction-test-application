@@ -1,10 +1,6 @@
 name: PR Test & Analysis
 
 on:
-  push:
-    branches:
-      - main
-      - dev
   pull_request:
     types: [ opened, reopened, synchronize ]
     branches:
@@ -18,6 +14,8 @@ concurrency:
 jobs:
   fetch-and-diff:
     runs-on: ubuntu-latest
+    env:
+      MODULES: demo demo1
 
     outputs:
       modified_modules: ${{ steps.determine_modules.outputs.modules }}
@@ -28,12 +26,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set Modules
-        run: |
-          echo "MODULES=demo demo1" >> $GITHUB_ENV
-
       - name: Fetch Base Branch
-        run: git fetch origin +refs/heads/${{ github.ref_name }}:refs/remotes/origin/${{ github.ref_name }}
+        run: |
+          git fetch origin +refs/heads/${{ github.head_ref }}:refs/remotes/origin/${{ github.base_ref }}
 
       - name: Get Modified Files
         run: |
@@ -87,10 +82,55 @@ jobs:
           MODULES=$(echo "$RAW_MODULES" | sed 's/\[//g; s/\]//g')
           IFS=',' read -ra MODIFIED_MODULES <<< "$MODULES"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
-            docker build -f ${MODULE}/Dockerfile -t jerryworld/${MODULE}-${{ github.ref_name }}:${{ github.sha }} .
-            docker push jerryworld/${MODULE}-${{ github.ref_name }}:${{ github.sha }}
+            docker build -f ${MODULE}/Dockerfile -t jerryworld/${MODULE}-${{ github.base_ref }}:${{ github.sha }} .
+            docker push jerryworld/${MODULE}-${{ github.base_ref }}:${{ github.sha }}
           done
-
+  scan:
+    needs: fetch-and-diff
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: ${{ fromJSON(needs.fetch-and-diff.outputs.modified_modules) }}
+    steps:
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+      - name: Run Trivy vulnerability scanner
+        run: |
+          echo "CHECK Target : ${{ matrix.module }}"
+          MODULE=${{ matrix.module }}
+          trivy image \
+          --format table \
+          --ignore-unfixed \
+          --vuln-type  os,library \
+          --severity  CRITICAL,HIGH,MEDIUM \
+          --output ${MODULE}_trivy-results.sarif \
+          jerryworld/${{ matrix.module }}-${{ github.base_ref }}:${{ github.sha }}
+      - name: check sarif
+        id: save_sarif
+        run: |
+          ls -al
+          MODULE=${{ matrix.module }}
+          DATA=$(cat ${MODULE}_trivy-results.sarif)
+          echo -e "trivy-results<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$DATA" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Add comment
+        uses: actions/github-script@v6
+        env:
+          TRIVY_RESULTS: ${{ steps.save_sarif.outputs.trivy-results }}
+        with:
+          github-token: ${{ secrets.GIT_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const pr_number = context.payload.pull_request.number;
+            
+            github.rest.issues.createComment({
+              owner: owner,
+              repo: repo,
+              issue_number: pr_number,
+              body: process.env.TRIVY_RESULTS
+            });
   push-manifest:
     name: Push Manifest
     needs: fetch-and-diff
@@ -112,13 +152,16 @@ jobs:
           git config --global user.name "jerry-world"
           
           echo "UPDATE Target : ${{ matrix.module }}"
-          IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ matrix.module }}"
-          for MODULE in "${MODIFIED_MODULES[@]}"; do
-            cd apps/${MODULE}/overlay/${{ github.ref_name }}
-            after_sha="${{ github.sha }}"
-            echo "this revision : ${after_sha}"
-            sed -i "s|\(image:[[:space:]]*[^:]*:\)[^[:space:]]*$|\1${after_sha}|g" ${MODULE}-deployment-patch.yaml
-            git add -A
-            git commit -m "update manifest demo"
-          done
+          MODULE=${{ matrix.module }}
+          cd apps/${MODULE}/overlay/${{ github.base_ref }}
+          after_sha="${{ github.sha }}"
+          echo "this revision : ${after_sha}"
+          sed -i "s|\(image:[[:space:]]*[^:]*:\)[^[:space:]]*$|\1${after_sha}|g" ${MODULE}-deployment-patch.yaml
+          git add -A
+          git commit -m "update manifest demo"
           git push
+
+
+#env:
+#  SLACK_VULNERABILITY_WEBHOOK_URL: ${{secrets.SLACK_VULNERABILITY_WEBHOOK_URL}}
+#  SLACK_PR_NOTIFICATION_WEBHOOK_URL: ${{secret.SLACK_PR_NOTIFICATION_WEBHOOK_URL}}
