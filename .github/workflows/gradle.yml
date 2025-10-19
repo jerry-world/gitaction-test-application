@@ -123,6 +123,8 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
       - name: Add comment
         uses: actions/github-script@v6
+        env:
+          TRIVY_RESULTS: ${{ steps.save_sarif.outputs.trivy-results }}
         with:
           github-token: ${{ secrets.GIT_TOKEN }}
           script: |
@@ -133,7 +135,7 @@ jobs:
               owner: owner,
               repo: repo,
               issue_number: pr_number,
-              body: "${{ steps.save_sarif.outputs.trivy-results }}"
+              body: process.env.TRIVY_RESULTS
             });
   push-manifest:
     name: Push Manifest
