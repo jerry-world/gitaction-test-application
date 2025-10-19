@@ -88,16 +88,18 @@ jobs:
   scan:
     needs: fetch-and-diff
     runs-on: ubuntu-latest
-    env:
-      MODULES: demo demo1
+    strategy:
+      matrix:
+        module: ${{ fromJSON(needs.fetch-and-diff.outputs.modified_modules) }}
     steps:
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
       - name: Run Trivy vulnerability scanner
         run: |
-          echo ${{ env.MODULES }}
-          for module in ${{ env.MODULES }}; do
+          echo "CHECK Target : ${{ matrix.module }}"
+          IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ matrix.module }}"
+          for MODULE in "${MODIFIED_MODULES[@]}"; do
             trivy image \
             --format table \
             --exit-code  1 \
@@ -111,9 +113,10 @@ jobs:
         id: save_sarif
         run: |
           combined=""
-          for module in ${{ env.MODULES }}; do
+          IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ matrix.module }}"
+          for MODULE in "${MODIFIED_MODULES[@]}"; do
             cat ${module}_trivy-results.sarif
-             combined="${combined}$(cat ${module}_trivy-results.sarif)\n\n"
+            combined="${combined}$(cat ${module}_trivy-results.sarif)\n\n"
           done
           echo -e "trivy-results<<EOF" >> $GITHUB_OUTPUT
           echo -e "$combined" >> $GITHUB_OUTPUT
