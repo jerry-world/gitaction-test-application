@@ -30,7 +30,9 @@ jobs:
           fetch-depth: 0
 
       - name: Fetch Base Branch
-        run: git fetch origin +refs/heads/${{ github.ref_name }}:refs/remotes/origin/${{ github.ref_name }}
+        run: |
+          echo ${{ toJson(github) }}
+          git fetch origin +refs/heads/${{ github.ref_name }}:refs/remotes/origin/${{ github.ref_name }}
 
       - name: Get Modified Files
         run: |
