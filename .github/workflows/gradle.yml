@@ -98,6 +98,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         run: |
           echo "CHECK Target : ${{ matrix.module }}"
+          MODULE=${{ matrix.module }}
           trivy image \
           --format table \
           --ignore-unfixed \
