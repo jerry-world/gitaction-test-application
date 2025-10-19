@@ -101,12 +101,12 @@ jobs:
           IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ matrix.module }}"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
             trivy image -d \
-            --format json \
+            --format table \
             --exit-code  1 \
             --ignore-unfixed \
             --vuln-type  os,library \
             --severity  CRITICAL,HIGH \
-            --output ${MODULE}_trivy-results.json \
+            --output ${MODULE}_trivy-results.sarif \
             jerryworld/${MODULE}-${{ github.base_ref }}:${{ github.sha }}
           done
       - name: check sarif
@@ -114,7 +114,7 @@ jobs:
         run: |
           ls -al
           MODULE=${{ matrix.module }}
-          cat ${MODULE}_trivy-results.json >> $GITHUB_OUTPUT
+          cat ${MODULE}_trivy-results.sarif >> $GITHUB_OUTPUT
       - name: Add comment
         uses: actions/github-script@v6
         env:
