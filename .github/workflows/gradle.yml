@@ -106,7 +106,7 @@ jobs:
             --ignore-unfixed \
             --vuln-type  os,library \
             --severity  CRITICAL,HIGH \
-            --output ${module}_trivy-results.json \
+            --output ${MODULE}_trivy-results.json \
             jerryworld/${MODULE}-${{ github.base_ref }}:${{ github.sha }}
           done
       - name: check sarif
