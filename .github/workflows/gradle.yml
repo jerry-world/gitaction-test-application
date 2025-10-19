@@ -115,7 +115,7 @@ jobs:
           combined=""
           IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ matrix.module }}"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
-            cat ${module}_trivy-results.sarif
+            cat ${MODULE}_trivy-results.json
             combined="${combined}$(cat ${module}_trivy-results.sarif)\n\n"
           done
           echo -e "trivy-results<<EOF" >> $GITHUB_OUTPUT
