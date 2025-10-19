@@ -1,7 +1,8 @@
 name: PR Test & Analysis
 
 on:
-  push:
+  pull_request:
+    types: [ opened, reopened, synchronize ]
     branches:
       - main
       - dev
@@ -16,6 +17,8 @@ concurrency:
 jobs:
   fetch-and-diff:
     runs-on: ubuntu-latest
+    env:
+      MODULES: demo demo1
 
     outputs:
       modified_modules: ${{ steps.determine_modules.outputs.modules }}
@@ -25,10 +28,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Set Modules
-        run: |
-          echo "MODULES=demo demo1" >> $GITHUB_ENV
 
       - name: Fetch Base Branch
         run: git fetch origin +refs/heads/${{ github.ref_name }}:refs/remotes/origin/${{ github.ref_name }}
@@ -91,23 +90,40 @@ jobs:
   scan:
 #    needs: fetch-and-diff
     runs-on: ubuntu-latest
+    env:
+      MODULES: demo demo1
     steps:
-      - name: Set Modules
-        run: |
-          echo "MODULES=demo demo1" >> $GITHUB_ENV
+
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
       - name: Run Trivy vulnerability scanner
         run: |
+          echo ${{ env.MODULES }}
           for module in ${{ env.MODULES }}; do
-            echo ${module}
-            trivy image \ 
-              --ignore-unfixed \
-              --severity CRITICAL,HIGH \
-              --format sarif --output trivy-results_${module}.sarif \
-              jerryworld/${module}-${{ github.ref_name }}:${{ github.sha }} 
+            trivy image \
+            --format table \
+            --exit-code  1 \
+            --ignore-unfixed \
+            --vuln-type  os,library \
+            --severity  CRITICAL,HIGH \
+            --output ${module}_trivy-results.sarif \
+            jerryworld/demo-main:7e0b47f95cf20ea9d9e11b55350975e1a349cc53
           done
+      - name: check sarif
+        id: save_sarif
+        run: |
+          for module in ${{ env.MODULES }}; do
+            cat ${module}_trivy-results.sarif
+            echo "trivy-results=$(cat ${module}_trivy-results.sarif})" >>> $GITHUB_OUTPUT
+          done
+      - name: Comment CVE
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            ${{ steps.save_sarif.outputs.trivy-results }}
+            
+
           
 
   push-manifest:
