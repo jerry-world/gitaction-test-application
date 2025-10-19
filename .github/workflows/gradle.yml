@@ -107,7 +107,7 @@ jobs:
             --vuln-type  os,library \
             --severity  CRITICAL,HIGH \
             --output ${module}_trivy-results.sarif \
-            jerryworld/${module}-${{ github.base_ref }}:${{ github.sha }}
+            jerryworld/${MODULE}-${{ github.base_ref }}:${{ github.sha }}
           done
       - name: check sarif
         id: save_sarif
