@@ -32,6 +32,8 @@ jobs:
 
       - name: Get Modified Files
         run: |
+          echo "event_before : ${{ github.event.before }}"
+          echo "after : ${{ github.sha }}"
           MODIFIED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }}  | tr '\n' ' ')
           echo $MODIFIED_FILES
           echo "MODIFIED_FILES=$MODIFIED_FILES" >> $GITHUB_ENV
