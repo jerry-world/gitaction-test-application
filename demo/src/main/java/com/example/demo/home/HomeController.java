@@ -11,7 +11,7 @@ public class HomeController {
     @RequestMapping(value = "/home")
     public String home() {
         System.out.println("home Check");
-        System.out.println("Trivy 테스트3");
+        System.out.println("Trivy 테스트4");
         return "Welcome home";
     }
 }

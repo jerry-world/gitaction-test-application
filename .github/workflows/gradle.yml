@@ -114,8 +114,10 @@ jobs:
         run: |
           ls -al
           MODULE=${{ matrix.module }}
-          echo "modules=$(echo $MODULE_MATRIX)" >> $GITHUB_OUTPUT
-          echo "trivy-results=$(cat ${MODULE}_trivy-results.sarif)" >> $GITHUB_OUTPUT
+          DATA=$(cat ${MODULE}_trivy-results.sarif)
+          echo -e "trivy-results<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$DATA" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
       - name: Add comment
         uses: actions/github-script@v6
         env:
