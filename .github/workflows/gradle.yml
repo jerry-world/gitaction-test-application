@@ -32,7 +32,7 @@ jobs:
       - name: Fetch Base Branch
         run: |
           echo ${{ toJson(github) }}
-          git fetch origin +refs/heads/${{ github.ref_name }}:refs/remotes/origin/${{ github.ref_name }}
+          git fetch origin +refs/heads/${{ github.head_ref }}:refs/remotes/origin/${{ github.base_ref }}
 
       - name: Get Modified Files
         run: |
@@ -86,8 +86,8 @@ jobs:
           MODULES=$(echo "$RAW_MODULES" | sed 's/\[//g; s/\]//g')
           IFS=',' read -ra MODIFIED_MODULES <<< "$MODULES"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
-            docker build -f ${MODULE}/Dockerfile -t jerryworld/${MODULE}-${{ github.ref_name }}:${{ github.sha }} .
-            docker push jerryworld/${MODULE}-${{ github.ref_name }}:${{ github.sha }}
+            docker build -f ${MODULE}/Dockerfile -t jerryworld/${MODULE}-${{ github.base_ref }}:${{ github.sha }} .
+            docker push jerryworld/${MODULE}-${{ github.base_ref }}:${{ github.sha }}
           done
   scan:
 #    needs: fetch-and-diff
@@ -151,7 +151,7 @@ jobs:
           echo "UPDATE Target : ${{ matrix.module }}"
           IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ matrix.module }}"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
-            cd apps/${MODULE}/overlay/${{ github.ref_name }}
+            cd apps/${MODULE}/overlay/${{ github.base_ref }}
             after_sha="${{ github.sha }}"
             echo "this revision : ${after_sha}"
             sed -i "s|\(image:[[:space:]]*[^:]*:\)[^[:space:]]*$|\1${after_sha}|g" ${MODULE}-deployment-patch.yaml
