@@ -100,13 +100,13 @@ jobs:
           echo "CHECK Target : ${{ matrix.module }}"
           IFS=' ' read -r -a MODIFIED_MODULES <<< "${{ matrix.module }}"
           for MODULE in "${MODIFIED_MODULES[@]}"; do
-            trivy image \
-            --format table \
+            trivy image -d \
+            --format json \
             --exit-code  1 \
             --ignore-unfixed \
             --vuln-type  os,library \
             --severity  CRITICAL,HIGH \
-            --output ${module}_trivy-results.sarif \
+            --output ${module}_trivy-results.json \
             jerryworld/${MODULE}-${{ github.base_ref }}:${{ github.sha }}
           done
       - name: check sarif
