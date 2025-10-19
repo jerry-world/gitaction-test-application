@@ -86,7 +86,7 @@ jobs:
             docker push jerryworld/${MODULE}-${{ github.base_ref }}:${{ github.sha }}
           done
   scan:
-#    needs: fetch-and-diff
+    needs: fetch-and-diff
     runs-on: ubuntu-latest
     env:
       MODULES: demo demo1
